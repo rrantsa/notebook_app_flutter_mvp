@@ -4,6 +4,8 @@ import '../models/notebook.dart';
 import '../models/note.dart';
 import '../database/database_helper.dart';
 import 'create_note_screen.dart';
+import 'package:printing/printing.dart';
+import '../services/pdf_service.dart';
 
 class NotebookDetailScreen extends StatefulWidget {
   final Notebook notebook;
@@ -59,11 +61,28 @@ class _NotebookDetailScreenState extends State<NotebookDetailScreen> {
     }
   }
 
+  Future<void> _exportPdf() async {
+  final pdfBytes = await PdfService.generateNotebookPdf(
+    widget.notebook,
+    notes,
+  );
+
+  await Printing.layoutPdf(
+    onLayout: (format) async => pdfBytes,
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.notebook.title),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            onPressed: notes.isEmpty ? null : _exportPdf,
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
