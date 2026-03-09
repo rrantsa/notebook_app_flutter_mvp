@@ -7,8 +7,11 @@ import '../services/image_service.dart';
 
 class CreateNoteScreen extends StatefulWidget {
   final int notebookId;
-
-  const CreateNoteScreen({super.key, required this.notebookId});
+  final Note? existingNote;
+  
+  const CreateNoteScreen({
+    super.key, required this.notebookId,
+    this.existingNote});
 
   @override
   State<CreateNoteScreen> createState() => _CreateNoteScreenState();
@@ -21,33 +24,43 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
   File? selectedImage;
 
-Future<void> pickImage() async {
+  Future<void> pickImage() async {
 
-  final picker = ImagePicker();
+    final picker = ImagePicker();
 
-  final picked = await picker.pickImage(
-    source: ImageSource.gallery,
-  );
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+    );
 
-  if (picked != null) {
-    setState(() {
-      selectedImage = File(picked.path);
-    });
+    if (picked != null) {
+      setState(() {
+        selectedImage = File(picked.path);
+      });
+    }
   }
-}
 
   Future<void> save() async {
-    String? imagePath;
+    String? imagePath = widget.existingNote?.imagePath;
+
     if (selectedImage != null) {
-      imagePath = await ImageService.copyImage(selectedImage!);
+      final selectedPath = selectedImage!.path;
+
+      if (widget.existingNote?.imagePath != selectedPath) {
+        imagePath = await ImageService.copyImage(selectedImage!);
+      } else {
+        imagePath = selectedPath;
+      }
     }
+
     final note = Note(
+      id: widget.existingNote?.id,
       notebookId: widget.notebookId,
       title: titleController.text.trim(),
       caption: captionController.text.trim(),
       date: dateController.text.trim(),
       imagePath: imagePath,
     );
+
     if (!mounted) return;
     Navigator.pop(context, note);
   }
@@ -58,6 +71,21 @@ Future<void> pickImage() async {
     captionController.dispose();
     dateController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.existingNote != null) {
+      titleController.text = widget.existingNote!.title;
+      captionController.text = widget.existingNote!.caption;
+      dateController.text = widget.existingNote!.date;
+
+      if (widget.existingNote!.imagePath != null) {
+        selectedImage = File(widget.existingNote!.imagePath!);
+      }
+    }
   }
 
   @override

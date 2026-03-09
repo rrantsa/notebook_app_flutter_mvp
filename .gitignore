@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Rantsa recreate it each time to give to ChatGPT as Prompt context
+notebook_app_flutter_mvp.zip

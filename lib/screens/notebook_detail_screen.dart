@@ -42,6 +42,23 @@ class _NotebookDetailScreenState extends State<NotebookDetailScreen> {
     await _loadNotes();
   }
 
+  Future<void> editNote(Note note) async {
+    final updatedNote = await Navigator.push<Note>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CreateNoteScreen(
+          notebookId: widget.notebook.id!,
+          existingNote: note,
+        ),
+      ),
+    );
+
+    if (updatedNote != null) {
+      await DatabaseHelper.instance.updateNote(updatedNote);
+      await _loadNotes();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,6 +103,10 @@ class _NotebookDetailScreenState extends State<NotebookDetailScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: ()=> editNote(note)
                         ),
                       ),
                     );

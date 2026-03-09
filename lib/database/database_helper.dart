@@ -101,6 +101,17 @@ class DatabaseHelper {
     );
   }
 
+  Future<int> updateNote(Note note) async {
+    final db = await database;
+
+    return await db.update(
+      'notes',
+      note.toMap(),
+      where: 'id = ?',
+      whereArgs: [note.id],
+    );
+  }
+
   Future close() async {
     final db = await instance.database;
     db.close();
