@@ -1,8 +1,9 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../models/note.dart';
+import 'package:image_picker/image_picker.dart';
+import '../services/image_service.dart';
 
 class CreateNoteScreen extends StatefulWidget {
   final int notebookId;
@@ -18,30 +19,36 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
   final captionController = TextEditingController();
   final dateController = TextEditingController();
 
-  String? selectedImagePath;
+  File? selectedImage;
 
-  Future<void> pickImage() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      allowMultiple: false,
-    );
+Future<void> pickImage() async {
 
-    if (result != null && result.files.single.path != null) {
-      setState(() {
-        selectedImagePath = result.files.single.path!;
-      });
-    }
+  final picker = ImagePicker();
+
+  final picked = await picker.pickImage(
+    source: ImageSource.gallery,
+  );
+
+  if (picked != null) {
+    setState(() {
+      selectedImage = File(picked.path);
+    });
   }
+}
 
-  void save() {
+  Future<void> save() async {
+    String? imagePath;
+    if (selectedImage != null) {
+      imagePath = await ImageService.copyImage(selectedImage!);
+    }
     final note = Note(
       notebookId: widget.notebookId,
       title: titleController.text.trim(),
       caption: captionController.text.trim(),
       date: dateController.text.trim(),
-      imagePath: selectedImagePath,
+      imagePath: imagePath,
     );
-
+    if (!mounted) return;
     Navigator.pop(context, note);
   }
 
@@ -78,21 +85,20 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
               maxLines: 3,
             ),
             const SizedBox(height: 20),
-            OutlinedButton.icon(
+            ElevatedButton(
               onPressed: pickImage,
-              icon: const Icon(Icons.image),
-              label: const Text("Choose image"),
+              child: Text("Select image"),
             ),
             const SizedBox(height: 12),
-            if (selectedImagePath != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  File(selectedImagePath!),
-                  height: 220,
-                  fit: BoxFit.cover,
-                ),
+            if (selectedImage != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.file(
+                selectedImage!,
+                height: 220,
+                fit: BoxFit.cover,
               ),
+            ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: save,

@@ -22,10 +22,12 @@ You can export all the notes into a printable pdf book
 | Note title            | ✔      |
 | Note caption          | ✔      |
 | Note date             | ✔      |
-| Note image            | ❌      |
-| Image picker          | ❌      |
-| Image storage         | ❌      |
-| PDF export            | ❌      |
-| Printable layout      | ❌      |
+| Note image            | ✔      |
+| Image picker          | ✔      |
+| Image storage         | ✔      |
 | Note editing          | ⚠      |
 | Note deletion         | ⚠      |
+| PDF export            | ❌      |
+| Printable layout      | ❌      |
+
+
