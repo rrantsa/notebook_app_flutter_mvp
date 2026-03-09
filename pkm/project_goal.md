@@ -25,8 +25,8 @@ You can export all the notes into a printable pdf book
 | Note image            | ✔      |
 | Image picker          | ✔      |
 | Image storage         | ✔      |
-| Note editing          | ⚠      |
-| Note deletion         | ⚠      |
+| Note editing          | ✔      |
+| Note deletion         | ❌      |
 | PDF export            | ❌      |
 | Printable layout      | ❌      |
 
