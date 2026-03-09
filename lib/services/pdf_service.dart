@@ -181,8 +181,7 @@ class PdfService {
                   color: PdfColors.grey100,
                 ),
                 child: image != null
-                    ? pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
+                    ? pw.Center(
                         child: pw.Image(
                           image,
                           fit: pw.BoxFit.contain,
