@@ -1,0 +1,114 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import '../models/notebook.dart';
+import '../models/note.dart';
+import '../database/database_helper.dart';
+import 'create_note_screen.dart';
+
+class NotebookDetailScreen extends StatefulWidget {
+  final Notebook notebook;
+
+  const NotebookDetailScreen({super.key, required this.notebook});
+
+  @override
+  State<NotebookDetailScreen> createState() => _NotebookDetailScreenState();
+}
+
+class _NotebookDetailScreenState extends State<NotebookDetailScreen> {
+  List<Note> notes = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotes();
+  }
+
+  Future<void> _loadNotes() async {
+    if (widget.notebook.id == null) return;
+
+    final loadedNotes = await DatabaseHelper.instance.getNotesByNotebookId(
+      widget.notebook.id!,
+    );
+
+    setState(() {
+      notes = loadedNotes;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> addNote(Note note) async {
+    await DatabaseHelper.instance.insertNote(note);
+    await _loadNotes();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.notebook.title),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : notes.isEmpty
+              ? const Center(
+                  child: Text('No notes yet. Tap + to create one.'),
+                )
+              : ListView.builder(
+                  itemCount: notes.length,
+                  itemBuilder: (context, index) {
+                    final note = notes[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(12),
+                        leading: note.imagePath != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  File(note.imagePath!),
+                                  width: 60,
+                                  height: 60,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : const Icon(Icons.image_not_supported),
+                        title: Text(note.title),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(note.date),
+                            const SizedBox(height: 4),
+                            Text(
+                              note.caption,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+
+                  },
+                ),
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.note_add),
+        onPressed: () async {
+          final note = await Navigator.push<Note>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CreateNoteScreen(
+                notebookId: widget.notebook.id ?? 0,
+              ),
+            ),
+          );
+
+          if (note != null) {
+            await addNote(note);
+          }
+        },
+      ),
+    );
+  }
+}
