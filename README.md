@@ -233,13 +233,3 @@ MIT License
 # Author
 
 Created by **Rantsa**
-
----
-
-Si tu veux, je peux aussi te faire une **version beaucoup plus attractive pour GitHub** avec :
-
-* badges (Flutter, license, version)
-* images mockup
-* section demo
-* GIF d’utilisation
-* README visuellement beaucoup plus pro (comme les projets populaires).
