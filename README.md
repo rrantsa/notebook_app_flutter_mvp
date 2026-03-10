@@ -57,22 +57,11 @@ The generated PDF includes:
 Screenshots of the app screens :
 
 # Screenshots
-
-### Notebooks list
-
-![Notebooks list](screenshots/notebooks_list_screen.png)
-
-### Notebook detail
-
-![Notebook detail](screenshots/notebook_detail_screen.png)
-
-### Create note
-
-![Create note](screenshots/create_note_screen.png)
-
-### Note reader
-
-![Note reader](screenshots/note_reader_screen.png)
+![Overview](screenshots/overview.png)
+[Notebooks list](screenshots/notebooks_list_screen.png)
+[Notebook detail](screenshots/notebook_detail_screen.png)
+[Create note](screenshots/create_note_screen.png)
+[Note reader](screenshots/note_reader_screen.png)
 
 ## Example PDF export
 
