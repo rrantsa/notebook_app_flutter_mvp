@@ -36,15 +36,14 @@ class _NotebooksListScreenState extends State<NotebooksListScreen> {
   }
 
 Future<void> _goToCreateNotebookScreen() async {
-  final notebook = await Navigator.push<Notebook>(
+  final created = await Navigator.push<bool>(
     context,
     MaterialPageRoute(
       builder: (context) => const CreateNotebookScreen(),
     ),
   );
 
-  if (notebook != null) {
-    await DatabaseHelper.instance.insertNotebook(notebook);
+  if (created == true) {
     await _loadNotebooks();
   }
 }
