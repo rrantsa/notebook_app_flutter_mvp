@@ -58,6 +58,7 @@ Screenshots of the app screens :
 
 # Screenshots
 ![Overview](screenshots/overview.png)
+
 [Notebooks list](screenshots/notebooks_list_screen.png)
 [Notebook detail](screenshots/notebook_detail_screen.png)
 [Create note](screenshots/create_note_screen.png)
