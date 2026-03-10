@@ -95,38 +95,58 @@ Future<void> _goToCreateNotebookScreen() async {
                           subtitle: Text(
                             '${notebook.subtitle} • ${notebook.year}',
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline),
-                            onPressed: () async {
-                              final confirmed = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Delete notebook'),
-                                  content: Text(
-                                    'Do you want to delete "${notebook.title}"?',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, false),
-                                      child: const Text('Cancel'),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit_outlined),
+                                onPressed: () async {
+                                  final updated = await Navigator.push<bool>(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          CreateNotebookScreen(notebook: notebook),
                                     ),
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, true),
-                                      child: const Text('Delete'),
+                                  );
+                                  if (updated == true) {
+                                    await _loadNotebooks();
+                                  }
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () async {
+                                  final confirmed = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Delete notebook'),
+                                      content: Text(
+                                        'Do you want to delete "${notebook.title}"?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                          child: const Text('Delete'),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              );
+                                  );
 
-                              if (confirmed == true && notebook.id != null) {
-                                await _deleteNotebook(notebook.id!);
-                              }
-                            },
+                                  if (confirmed == true && notebook.id != null) {
+                                    await _deleteNotebook(notebook.id!);
+                                  }
+                                },
+                              )
+                            ]
                           ),
                           onTap: () => _openNotebook(notebook),
-                        ),
+                          ),
                       );
                     },
                   ),

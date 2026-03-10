@@ -28,5 +28,6 @@ You can export all the notes into a printable pdf book
 | Note editing          | ✔      |
 | Note deletion         | ✔      |
 | PDF export            | ✔      |
-| View note (Read)      | ❌     |
-| Printable layout      | ❌     |
+| View note (Read)      | ✔      |
+| Printable layout      | ✔     |
+| Edit a notebook       | ❌      |
