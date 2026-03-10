@@ -6,6 +6,7 @@ import '../database/database_helper.dart';
 import 'create_note_screen.dart';
 import 'package:printing/printing.dart';
 import '../services/pdf_service.dart';
+import 'note_reader_screen.dart';
 
 class NotebookDetailScreen extends StatefulWidget {
   final Notebook notebook;
@@ -161,6 +162,18 @@ class _NotebookDetailScreenState extends State<NotebookDetailScreen> {
                             ),
                           ],
                         ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => NoteReaderScreen(
+                                notebook: widget.notebook,
+                                notes: notes,
+                                initialIndex: index,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     );
 
