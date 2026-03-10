@@ -54,17 +54,31 @@ The generated PDF includes:
 
 # Screenshots
 
-*(Add screenshots here once the UI is stable)*
+Screenshots of the app screens :
 
-Example:
+# Screenshots
 
-```
-/screenshots
-  notebook_list.png
-  notebook_detail.png
-  create_note.png
-  pdf_export.png
-```
+### Notebooks list
+
+![Notebooks list](screenshots/notebooks_list_screen.png)
+
+### Notebook detail
+
+![Notebook detail](screenshots/notebook_detail_screen.png)
+
+### Create note
+
+![Create note](screenshots/create_note_screen.png)
+
+### Note reader
+
+![Note reader](screenshots/note_reader_screen.png)
+
+## Example PDF export
+
+📄 Download a sample exported notebook:
+
+[Sample Notebook PDF](examples/sample_notebook_export.pdf)
 
 ---
 
