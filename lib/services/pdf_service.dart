@@ -81,7 +81,7 @@ class PdfService {
   ) async {
     final pdf = pw.Document();
 
-    final totalLogicalPages = 1 + notes.length; // 1 couverture + notes
+    final totalLogicalPages = 2 + notes.length; // 1 couverture + 1 page blanche + notes
     final imposition = BookletImposition.build(totalLogicalPages);
 
     final pageBuilders = await _buildLogicalPages(notebook, notes);
@@ -116,8 +116,13 @@ class PdfService {
   ) async {
     final pages = <pw.Widget Function()>[];
 
+    // Page 1 : couverture
     pages.add(() => _buildBookletCoverPageContent(notebook, notes.length));
 
+    // Page 2 : verso de couverture volontairement blanc
+    pages.add(() => pw.SizedBox());
+
+    // Page 3+ : notes
     for (final note in notes) {
       final pdfImage = await _loadMemoryImage(note.imagePath);
 
