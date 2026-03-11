@@ -70,6 +70,8 @@ Screenshots of the app screens :
 
 [Sample Notebook PDF](examples/sample_notebook_export.pdf)
 
+[Sample PDF Print Imposed Notebook](examples/sample_print_imposed.pdf)
+
 ---
 
 # Tech Stack
@@ -191,7 +193,9 @@ Implemented features:
 * note editing
 * note deletion
 * image attachment
-* PDF export
+* PDF export : 
+  * Normal mode
+  * Booklet Print imposed mode
 
 ---
 
