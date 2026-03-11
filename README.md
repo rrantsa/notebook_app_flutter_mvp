@@ -6,6 +6,18 @@ This project was built as a lightweight **local-first note taking tool** focused
 
 ---
 
+# Download
+
+You can download the latest compiled version of the application from the GitHub releases page:
+
+⬇️ **Download the latest version**
+
+https://github.com/rrantsa/notebook_app_flutter_mvp/releases/latest
+
+The release page contains the **Windows executable (.zip)** ready to use without installing Flutter.
+
+---
+
 # Features
 
 ## Photobook/Notebook Management
