@@ -46,3 +46,6 @@ app.*.map.json
 
 # Rantsa recreate it each time to give to ChatGPT as Prompt context
 notebook_app_flutter_mvp.zip
+
+# A simple zip I give to friends to test the app
+NotebookApp.zip
