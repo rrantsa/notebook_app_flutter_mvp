@@ -1,8 +1,8 @@
 # Printable Photobook/Notebook App
 
-A simple **desktop Photobook/Notebook application** built with **Flutter** that allows users to create notebooks, add notes with images, and export them as a **printable PDF book**.
+A simple **desktop Photobook/Notebook application** built with **Flutter** that allows users to create photobooks/notebooks, add notes with images, and export them as a **printable PDF book**.
 
-This project was built as a lightweight **local-first note taking tool** focused on **structured notebooks and printable exports**.
+This project was built as a lightweight **local-first Photobook creation tool** focused on **print ready exports generation**.
 
 ---
 
