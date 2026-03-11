@@ -13,6 +13,8 @@ You can export all the notes into a printable pdf book
 
 ## Feature completion summary
 
+| Status : ❌ for uncompleted and ✔ or completed
+
 | Feature               | Status |
 | --------------------- | ------ |
 | Multiple notebooks    | ✔      |
@@ -31,4 +33,6 @@ You can export all the notes into a printable pdf book
 | View note (Read)      | ✔      |
 | Printable layout      | ✔     |
 | Edit a notebook       | ✔      |
-| PDF Impose print format      | ❌     |
+| PDF Impose print format      | ✔     |
+| Export a notebook and it's notes into CSV      | ❌     |
+| Create a notebook and it's notes from CSV      | ❌     |
