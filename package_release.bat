@@ -1,23 +1,36 @@
 @echo off
+setlocal
 
-REM Go to project root (folder where this script is located)
-cd /d %~dp0
+cd /d "%~dp0"
 
-flutter build windows
+call flutter build windows
+if errorlevel 1 (
+    echo Build failed.
+    pause
+    exit /b 1
+)
 
-REM Path to the Flutter Windows release build
-set RELEASE_DIR=build\windows\x64\runner\Release
+set "RELEASE_DIR=%CD%\build\windows\x64\runner\Release"
+set "ZIP_NAME=%CD%\NotebookApp.zip"
 
-REM Name of the zip file
-set ZIP_NAME=NotebookApp.zip
+if not exist "%RELEASE_DIR%" (
+    echo Release folder not found: "%RELEASE_DIR%"
+    pause
+    exit /b 1
+)
 
-REM Remove old zip if it exists
-if exist %ZIP_NAME% del %ZIP_NAME%
+if exist "%ZIP_NAME%" del /f /q "%ZIP_NAME%"
 
-echo Creating ZIP package...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
+  "Compress-Archive -Path '%RELEASE_DIR%\*' -DestinationPath '%ZIP_NAME%' -Force"
 
-powershell -Command "Compress-Archive -Path '%RELEASE_DIR%\*' -DestinationPath '%ZIP_NAME%'"
+if errorlevel 1 (
+    echo ZIP creation failed.
+    pause
+    exit /b 1
+)
 
 echo.
-echo Package created: %ZIP_NAME%
+echo Package created successfully:
+echo "%ZIP_NAME%"
 pause
