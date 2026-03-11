@@ -8,6 +8,7 @@ import '../models/notebook.dart';
 import '../models/note.dart';
 import '../models/pdf_export_mode.dart';
 import 'booklet_imposition.dart';
+import 'package:image/image.dart' as img;
 
 class PdfService {
   static const PdfColor _accent = PdfColors.blueGrey900;
@@ -38,17 +39,11 @@ class PdfService {
     final pdf = pw.Document();
 
     pdf.addPage(_buildCoverPage(notebook, notes.length));
-												
-									   
-													  
-										   
-		 
-	   
-
+			
     for (int i = 0; i < notes.length; i++) {
       final note = notes[i];
       final isLeftPage = i.isEven;
-      final pdfImage = await _loadMemoryImage(note.imagePath);
+      final pdfImage = await _buildPdfImage(note.imagePath);
 
       pdf.addPage(
         pw.Page(
@@ -124,7 +119,7 @@ class PdfService {
 
     // Page 3+ : notes
     for (final note in notes) {
-      final pdfImage = await _loadMemoryImage(note.imagePath);
+      final pdfImage = await _buildPdfImage(note.imagePath);
 
       pages.add(
         () => _buildBookletNotePageContent(
@@ -492,4 +487,29 @@ class PdfService {
     final bytes = await imageFile.readAsBytes();
     return pw.MemoryImage(bytes);
   }
+
+  static Future<pw.MemoryImage?> _buildPdfImage(String? imagePath) async {
+    if (imagePath == null || imagePath.isEmpty) return null;
+
+    final file = File(imagePath);
+    if (!file.existsSync()) return null;
+
+    final bytes = await file.readAsBytes();
+    final decoded = img.decodeImage(bytes);
+
+    if (decoded == null) {
+      return pw.MemoryImage(bytes);
+    }
+
+    img.Image finalImage = decoded;
+
+    // Si l’image est en portrait, on la tourne de -90°
+    if (decoded.height > decoded.width) {
+      finalImage = img.copyRotate(decoded, angle: -90);
+    }
+
+    final outputBytes = img.encodeJpg(finalImage, quality: 95);
+    return pw.MemoryImage(outputBytes);
+  }
 }
+

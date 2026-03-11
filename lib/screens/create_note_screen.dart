@@ -104,7 +104,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
             const SizedBox(height: 12),
             TextField(
               controller: dateController,
-              decoration: const InputDecoration(labelText: "Date"),
+              decoration: const InputDecoration(labelText: "Date or Order",hintText: "YYYY-MM-DD or 001"),
             ),
             const SizedBox(height: 12),
             TextField(
