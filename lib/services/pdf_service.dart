@@ -6,6 +6,8 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../models/notebook.dart';
 import '../models/note.dart';
+import '../models/pdf_export_mode.dart';
+import 'booklet_imposition.dart';
 
 class PdfService {
   static const PdfColor _accent = PdfColors.blueGrey900;
@@ -14,28 +16,39 @@ class PdfService {
 
   static Future<Uint8List> generateNotebookPdf(
     Notebook notebook,
-    List<Note> notes,
-  ) async {
-    final pdf = pw.Document();
+    List<Note> notes, {
+    PdfExportMode mode = PdfExportMode.normal,
+  }) async {
 
     final sortedNotes = [...notes];
     sortedNotes.sort((a, b) => a.date.compareTo(b.date));
 
-    pdf.addPage(_buildCoverPage(notebook, sortedNotes.length));
+    if (mode == PdfExportMode.booklet) {
+      return _generateBookletPdf(notebook, sortedNotes);
+    }
 
-    for (int i = 0; i < sortedNotes.length; i++) {
-      final note = sortedNotes[i];
+    return _generateNormalPdf(notebook, sortedNotes);
+  }
+								  
+
+  static Future<Uint8List> _generateNormalPdf(
+    Notebook notebook,
+    List<Note> notes,
+  ) async {
+    final pdf = pw.Document();
+
+    pdf.addPage(_buildCoverPage(notebook, notes.length));
+												
+									   
+													  
+										   
+		 
+	   
+
+    for (int i = 0; i < notes.length; i++) {
+      final note = notes[i];
       final isLeftPage = i.isEven;
-
-      pw.MemoryImage? pdfImage;
-
-      if (note.imagePath != null && note.imagePath!.trim().isNotEmpty) {
-        final imageFile = File(note.imagePath!);
-        if (await imageFile.exists()) {
-          final bytes = await imageFile.readAsBytes();
-          pdfImage = pw.MemoryImage(bytes);
-        }
-      }
+      final pdfImage = await _loadMemoryImage(note.imagePath);
 
       pdf.addPage(
         pw.Page(
@@ -62,71 +75,201 @@ class PdfService {
     return pdf.save();
   }
 
+  static Future<Uint8List> _generateBookletPdf(
+    Notebook notebook,
+    List<Note> notes,
+  ) async {
+    final pdf = pw.Document();
+
+    final totalLogicalPages = 1 + notes.length; // 1 couverture + notes
+    final imposition = BookletImposition.build(totalLogicalPages);
+
+    final pageBuilders = await _buildLogicalPages(notebook, notes);
+
+    for (final spread in imposition.spreads) {
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4.landscape,
+          margin: const pw.EdgeInsets.all(20),
+          build: (context) {
+            return _buildBookletSpread(
+              leftPage: _buildLogicalPageWidget(
+                logicalPageNumber: spread.leftPage,
+                pageBuilders: pageBuilders,
+              ),
+              rightPage: _buildLogicalPageWidget(
+                logicalPageNumber: spread.rightPage,
+                pageBuilders: pageBuilders,
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    return pdf.save();
+  }
+
+  static Future<List<pw.Widget Function()>> _buildLogicalPages(
+    Notebook notebook,
+    List<Note> notes,
+  ) async {
+    final pages = <pw.Widget Function()>[];
+
+    pages.add(() => _buildBookletCoverPageContent(notebook, notes.length));
+
+    for (final note in notes) {
+      final pdfImage = await _loadMemoryImage(note.imagePath);
+
+      pages.add(
+        () => _buildBookletNotePageContent(
+          note: note,
+          image: pdfImage,
+          notebookTitle: notebook.title,
+        ),
+      );
+    }
+
+    return pages;
+  }
+
+  static pw.Widget _buildLogicalPageWidget({
+    required int? logicalPageNumber,
+    required List<pw.Widget Function()> pageBuilders,
+  }) {
+    if (logicalPageNumber == null) {
+      return _buildBookletPaperPage(
+        child: pw.SizedBox(),
+      );
+    }
+
+    final index = logicalPageNumber - 1;
+
+    if (index < 0 || index >= pageBuilders.length) {
+      return _buildBookletPaperPage(
+        child: pw.SizedBox(),
+      );
+    }
+
+    return _buildBookletPaperPage(
+      child: pageBuilders[index](),
+    );
+  }
+
+  static pw.Widget _buildBookletSpread({
+    required pw.Widget leftPage,
+    required pw.Widget rightPage,
+  }) {
+    return pw.Row(
+      children: [
+        pw.Expanded(child: leftPage),
+        pw.SizedBox(width: 12),
+        pw.Expanded(child: rightPage),
+      ],
+    );
+  }
+
+  static pw.Widget _buildBookletPaperPage({
+    required pw.Widget child,
+  }) {
+    return pw.Container(
+      height: double.infinity,
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: _border),
+        color: PdfColors.white,
+      ),
+      padding: const pw.EdgeInsets.all(18),
+      child: child,
+    );
+  }
+
   static pw.Page _buildCoverPage(Notebook notebook, int noteCount) {
     return pw.Page(
       pageFormat: PdfPageFormat.a4,
       margin: const pw.EdgeInsets.all(40),
       build: (context) {
-        return pw.Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: pw.BoxDecoration(
-            border: pw.Border.all(color: _accent, width: 2),
-          ),
-          child: pw.Padding(
-            padding: const pw.EdgeInsets.all(28),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.center,
-              children: [
-                pw.Spacer(),
-                pw.Text(
-                  notebook.title,
-                  textAlign: pw.TextAlign.center,
-                  style: pw.TextStyle(
-                    fontSize: 28,
-                    fontWeight: pw.FontWeight.bold,
-                    color: _accent,
-                  ),
-                ),
-                pw.SizedBox(height: 12),
-                if (notebook.subtitle.trim().isNotEmpty)
-                  pw.Text(
-                    notebook.subtitle,
-                    textAlign: pw.TextAlign.center,
-                    style: pw.TextStyle(
-                      fontSize: 16,
-                      color: _muted,
-                    ),
-                  ),
-                pw.SizedBox(height: 24),
-                pw.Container(
-                  width: 60,
-                  height: 2,
-                  color: _accent,
-                ),
-                pw.SizedBox(height: 24),
-                pw.Text(
-                  notebook.year.toString(),
-                  style: pw.TextStyle(
-                    fontSize: 15,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-                pw.SizedBox(height: 8),
-                pw.Text(
-                  '$noteCount note${noteCount > 1 ? 's' : ''}',
-                  style: pw.TextStyle(
-                    fontSize: 12,
-                    color: _muted,
-                  ),
-                ),
-                pw.Spacer()
-              ],
-            ),
-          ),
+        return _buildCoverContent(
+          notebook: notebook,
+          noteCount: noteCount,
         );
       },
     );
+  }
+
+  static pw.Widget _buildBookletCoverPageContent(
+    Notebook notebook,
+    int noteCount,
+  ) {
+    return _buildCoverContent(
+      notebook: notebook,
+      noteCount: noteCount,
+    );
+  }
+
+  static pw.Widget _buildCoverContent({
+    required Notebook notebook,
+    required int noteCount,
+  }) {
+    return pw.Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: _accent, width: 2),
+      ),
+      child: pw.Padding(
+        padding: const pw.EdgeInsets.all(28),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.center,
+          children: [
+            pw.Spacer(),
+            pw.Text(
+              notebook.title,
+              textAlign: pw.TextAlign.center,
+              style: pw.TextStyle(
+                fontSize: 28,
+                fontWeight: pw.FontWeight.bold,
+                color: _accent,
+              ),
+            ),
+            pw.SizedBox(height: 12),
+            if (notebook.subtitle.trim().isNotEmpty)
+              pw.Text(
+                notebook.subtitle,
+                textAlign: pw.TextAlign.center,
+                style: pw.TextStyle(
+                  fontSize: 16,
+                  color: _muted,
+                ),
+              ),
+            pw.SizedBox(height: 24),
+            pw.Container(
+              width: 60,
+              height: 2,
+              color: _accent,
+            ),
+            pw.SizedBox(height: 24),
+            pw.Text(
+              notebook.year.toString(),
+              style: pw.TextStyle(
+                fontSize: 15,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 8),
+            pw.Text(
+              '$noteCount note${noteCount > 1 ? 's' : ''}',
+              style: pw.TextStyle(
+                fontSize: 12,
+                color: _muted,
+              ),
+            ),
+            pw.Spacer(),
+          ],
+        ),
+      ),
+    );
+		
+	  
   }
 
   static pw.Widget _buildNotePage({
@@ -173,54 +316,121 @@ class PdfService {
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Container(
-                width: double.infinity,
-                height: 280,
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: _border),
-                  color: PdfColors.grey100,
-                ),
-                child: image != null
-                    ? pw.Center(
-                        child: pw.Image(
-                          image,
-                          fit: pw.BoxFit.contain,
-                        ),
-                      )
-                    : pw.Center(
-                        child: pw.Text(
-                          'No image',
-                          style: pw.TextStyle(
-                            fontSize: 12,
-                            color: PdfColors.grey600,
-                          ),
-                        ),
-                      ),
-              ),
-
+              _buildImageBox(image, height: 280),
               pw.SizedBox(height: 20),
-
-              pw.SizedBox(height: 8),
-
-              pw.Container(
+              pw.SizedBox(
                 width: double.infinity,
-                padding: const pw.EdgeInsets.all(14),
-                child: pw.Text(
-                  note.caption.trim().isEmpty ? '' : note.caption,
-                  textAlign: pw.TextAlign.justify,
-                  style: const pw.TextStyle(
-                    fontSize: 12,
-                    lineSpacing: 4,
+                child: pw.Container(
+                  padding: const pw.EdgeInsets.all(14),
+                  child: pw.Text(
+                    note.caption.trim().isEmpty ? '' : note.caption,
+                    textAlign: pw.TextAlign.justify,
+                    style: const pw.TextStyle(
+                      fontSize: 12,
+                      lineSpacing: 4,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
         ),
-
         pw.SizedBox(height: 16),
         _buildFooter(pageNumber, totalPages),
       ],
+    );
+  }
+
+  static pw.Widget _buildBookletNotePageContent({
+    required Note note,
+    required pw.MemoryImage? image,
+    required String notebookTitle,
+  }) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        _buildHeader(notebookTitle),
+        pw.SizedBox(height: 12),
+        pw.Text(
+          note.title,
+          style: pw.TextStyle(
+            fontSize: 16,
+            fontWeight: pw.FontWeight.bold,
+            color: _accent,
+          ),
+        ),
+        pw.SizedBox(height: 6),
+        pw.Container(
+          padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: _border),
+            borderRadius: pw.BorderRadius.circular(4),
+          ),
+          child: pw.Text(
+            note.date,
+            style: pw.TextStyle(
+              fontSize: 9,
+              color: _muted,
+            ),
+          ),
+        ),
+        pw.SizedBox(height: 12),
+        pw.Expanded(
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              _buildImageBox(image, height: 170),
+              pw.SizedBox(height: 12),
+              pw.Expanded(
+                child: pw.Container(
+                  width: double.infinity,
+                  padding: const pw.EdgeInsets.all(8),
+                  child: pw.Text(
+                    note.caption.trim().isEmpty ? '' : note.caption,
+                    textAlign: pw.TextAlign.justify,
+                    style: const pw.TextStyle(
+                      fontSize: 9,
+                      lineSpacing: 3,
+                    ),
+                    maxLines: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  static pw.Widget _buildImageBox(pw.MemoryImage? image, {required double height}) {
+    return pw.Container(
+      width: double.infinity,
+      height: height,
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: _border),
+        color: PdfColors.grey100,
+      ),
+      child: image != null
+          ? pw.Center(
+              child: pw.Image(
+                image,
+                fit: pw.BoxFit.contain,
+              ),
+            )
+          : pw.Center(
+              child: pw.Text(
+                'No image',
+                style: pw.TextStyle(
+                  fontSize: 12,
+                  color: PdfColors.grey600,
+                ),
+              ),
+            ),
+
+								
+											 
+		
     );
   }
 
@@ -262,5 +472,19 @@ class PdfService {
         ),
       ],
     );
+  }
+
+  static Future<pw.MemoryImage?> _loadMemoryImage(String? imagePath) async {
+    if (imagePath == null || imagePath.trim().isEmpty) {
+      return null;
+    }
+
+    final imageFile = File(imagePath);
+    if (!await imageFile.exists()) {
+      return null;
+    }
+
+    final bytes = await imageFile.readAsBytes();
+    return pw.MemoryImage(bytes);
   }
 }

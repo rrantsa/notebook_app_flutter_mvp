@@ -30,4 +30,5 @@ You can export all the notes into a printable pdf book
 | PDF export            | ✔      |
 | View note (Read)      | ✔      |
 | Printable layout      | ✔     |
-| Edit a notebook       | ❌      |
+| Edit a notebook       | ✔      |
+| PDF Impose print format      | ❌     |

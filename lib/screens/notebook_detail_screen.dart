@@ -7,6 +7,8 @@ import 'create_note_screen.dart';
 import 'package:printing/printing.dart';
 import '../services/pdf_service.dart';
 import 'note_reader_screen.dart';
+import '../models/pdf_export_mode.dart';
+
 
 class NotebookDetailScreen extends StatefulWidget {
   final Notebook notebook;
@@ -62,16 +64,65 @@ class _NotebookDetailScreenState extends State<NotebookDetailScreen> {
     }
   }
 
-  Future<void> _exportPdf() async {
-  final pdfBytes = await PdfService.generateNotebookPdf(
-    widget.notebook,
-    notes,
-  );
 
-  await Printing.layoutPdf(
-    onLayout: (format) async => pdfBytes,
-  );
-}
+  Future<PdfExportMode?> _showPdfExportModePicker() async {
+    return showModalBottomSheet<PdfExportMode>(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const ListTile(
+                  title: Text(
+                    'Choose PDF export mode',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.picture_as_pdf),
+                  title: const Text('Normal'),
+                  subtitle: const Text(
+                    'Standard PDF export with pages in reading order.',
+                  ),
+                  onTap: () {
+                    Navigator.pop(context, PdfExportMode.normal);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.menu_book),
+                  title: const Text('Booklet'),
+                  subtitle: const Text(
+                    'Print-ready booklet imposition for double-sided folded pages.',
+                  ),
+                  onTap: () {
+                    Navigator.pop(context, PdfExportMode.booklet);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _exportPdf() async {
+    final selectedMode = await _showPdfExportModePicker();
+    if (selectedMode == null) return;
+
+    final pdfBytes = await PdfService.generateNotebookPdf(
+      widget.notebook,
+      notes,
+      mode: selectedMode,
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (format) async => pdfBytes,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
