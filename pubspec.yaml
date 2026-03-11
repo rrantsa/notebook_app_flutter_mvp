@@ -21,3 +21,11 @@ dependencies:
 
 flutter:
   uses-material-design: true
+
+dev_dependencies:
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  windows:
+    generate: true
+    image_path: "assets/icon.png"
