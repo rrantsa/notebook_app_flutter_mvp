@@ -1,0 +1,4 @@
+enum PdfExportMode {
+  normal,
+  booklet,
+}
