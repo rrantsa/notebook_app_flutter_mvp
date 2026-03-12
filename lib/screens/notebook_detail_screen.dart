@@ -36,8 +36,7 @@ class _NotebookDetailScreenState extends State<NotebookDetailScreen> {
       widget.notebook.id!,
     );
 
-    loadedNotes.sort((a, b) => a.date.compareTo(b.date));
-
+    loadedNotes.sort((a, b) => b.date.compareTo(a.date));
 
     setState(() {
       notes = loadedNotes;
