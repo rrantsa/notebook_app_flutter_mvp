@@ -28,8 +28,7 @@ class _NoteReaderScreenState extends State<NoteReaderScreen> {
   void initState() {
     super.initState();
 
-    _sortedNotes = List.from(widget.notes)
-      ..sort((a, b) => a.date.compareTo(b.date));
+    _sortedNotes = List.from(widget.notes);
 
     _currentIndex = widget.initialIndex;
 
