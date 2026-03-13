@@ -118,16 +118,22 @@ class PdfService {
     pages.add(() => pw.SizedBox());
 
     // Page 3+ : notes
+    int actualPageNumber = 1;
     for (final note in notes) {
       final pdfImage = await _buildPdfImage(note.imagePath);
+      final currentPageNumber = actualPageNumber;
 
       pages.add(
         () => _buildBookletNotePageContent(
           note: note,
           image: pdfImage,
           notebookTitle: notebook.title,
+          pageNumber: currentPageNumber,
+          totalPages: notes.length
         ),
       );
+      actualPageNumber += 1;
+
     }
 
     return pages;
@@ -347,6 +353,8 @@ class PdfService {
     required Note note,
     required pw.MemoryImage? image,
     required String notebookTitle,
+    required int pageNumber,
+    required int totalPages,
   }) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -403,6 +411,8 @@ class PdfService {
             ],
           ),
         ),
+        pw.SizedBox(height: 10),
+        _buildFooter(pageNumber, totalPages),
       ],
     );
   }
