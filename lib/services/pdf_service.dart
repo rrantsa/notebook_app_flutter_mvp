@@ -316,8 +316,10 @@ class PdfService {
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              _buildImageBox(image, height: 280),
-              pw.SizedBox(height: 20),
+              if (image != null) ...[
+                _buildImageBox(image, height: 280),
+                pw.SizedBox(height: 20),
+              ],
               pw.SizedBox(
                 width: double.infinity,
                 child: pw.Container(
@@ -379,8 +381,10 @@ class PdfService {
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              _buildImageBox(image, height: 170),
-              pw.SizedBox(height: 12),
+              if(image != null)...[
+                _buildImageBox(image, height: 170),
+                pw.SizedBox(height: 12),
+              ],
               pw.Expanded(
                 child: pw.Container(
                   width: double.infinity,
