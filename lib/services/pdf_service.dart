@@ -13,10 +13,12 @@ import 'booklet_imposition.dart';
 class PdfPreparedImage {
   final pw.MemoryImage image;
   final bool wasPortrait;
+  final bool wasRotated;
 
   PdfPreparedImage({
     required this.image,
     required this.wasPortrait,
+    required this.wasRotated,
   });
 }
 
@@ -30,7 +32,6 @@ class PdfService {
     List<Note> notes, {
     PdfExportMode mode = PdfExportMode.normal,
   }) async {
-
     final sortedNotes = [...notes];
     sortedNotes.sort((a, b) => a.date.compareTo(b.date));
 
@@ -40,7 +41,6 @@ class PdfService {
 
     return _generateNormalPdf(notebook, sortedNotes);
   }
-
 
   static Future<Uint8List> _generateNormalPdf(
     Notebook notebook,
@@ -53,7 +53,10 @@ class PdfService {
     for (int i = 0; i < notes.length; i++) {
       final note = notes[i];
       final isLeftPage = i.isEven;
-      final pdfImage = await _buildPdfImage(note.imagePath);
+      final pdfImage = await _buildPdfImage(
+        note.imagePath,
+        hasCaption: note.caption.trim().isNotEmpty,
+      );
 
       pdf.addPage(
         pw.Page(
@@ -130,7 +133,10 @@ class PdfService {
     // Page 3+ : notes
     int actualPageNumber = 1;
     for (final note in notes) {
-      final pdfImage = await _buildPdfImage(note.imagePath);
+      final pdfImage = await _buildPdfImage(
+        note.imagePath,
+        hasCaption: note.caption.trim().isNotEmpty,
+      );
       final currentPageNumber = actualPageNumber;
 
       pages.add(
@@ -142,7 +148,6 @@ class PdfService {
           totalPages: notes.length,
         ),
       );
-							
 
       actualPageNumber += 1;
     }
@@ -285,8 +290,6 @@ class PdfService {
         ),
       ),
     );
-  
-   
   }
 
   static pw.Widget _buildNotePage({
@@ -307,7 +310,6 @@ class PdfService {
       children: [
         _buildHeader(notebookTitle),
         pw.SizedBox(height: 18),
-
         pw.Text(
           note.title,
           style: pw.TextStyle(
@@ -317,7 +319,6 @@ class PdfService {
           ),
         ),
         pw.SizedBox(height: 6),
-
         pw.Container(
           padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: pw.BoxDecoration(
@@ -332,9 +333,7 @@ class PdfService {
             ),
           ),
         ),
-
         pw.SizedBox(height: 18),
-
         pw.Expanded(
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -469,10 +468,6 @@ class PdfService {
                 ),
               ),
             ),
-
-		
-			
-  
     );
   }
 
@@ -530,7 +525,10 @@ class PdfService {
     return pw.MemoryImage(bytes);
   }
 
-  static Future<PdfPreparedImage?> _buildPdfImage(String? imagePath) async {
+  static Future<PdfPreparedImage?> _buildPdfImage(
+    String? imagePath, {
+    required bool hasCaption,
+  }) async {
     if (imagePath == null || imagePath.isEmpty) return null;
 
     final file = File(imagePath);
@@ -543,15 +541,19 @@ class PdfService {
       return PdfPreparedImage(
         image: pw.MemoryImage(bytes),
         wasPortrait: false,
+        wasRotated: false,
       );
     }
 
     final wasPortrait = decoded.height > decoded.width;
-    img.Image finalImage = decoded;
 
-    // Si l’image est en portrait, on la tourne de -90°
-    if (wasPortrait) {
+    img.Image finalImage = decoded;
+    bool wasRotated = false;
+
+    // Rotation uniquement si portrait + caption renseigné
+    if (wasPortrait && hasCaption) {
       finalImage = img.copyRotate(decoded, angle: -90);
+      wasRotated = true;
     }
 
     final outputBytes = img.encodeJpg(finalImage, quality: 95);
@@ -559,6 +561,7 @@ class PdfService {
     return PdfPreparedImage(
       image: pw.MemoryImage(outputBytes),
       wasPortrait: wasPortrait,
+      wasRotated: wasRotated,
     );
   }
 }
