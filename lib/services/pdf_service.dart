@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:image/image.dart' as img;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -8,7 +9,16 @@ import '../models/notebook.dart';
 import '../models/note.dart';
 import '../models/pdf_export_mode.dart';
 import 'booklet_imposition.dart';
-import 'package:image/image.dart' as img;
+
+class PdfPreparedImage {
+  final pw.MemoryImage image;
+  final bool wasPortrait;
+
+  PdfPreparedImage({
+    required this.image,
+    required this.wasPortrait,
+  });
+}
 
 class PdfService {
   static const PdfColor _accent = PdfColors.blueGrey900;
@@ -30,7 +40,7 @@ class PdfService {
 
     return _generateNormalPdf(notebook, sortedNotes);
   }
-								  
+
 
   static Future<Uint8List> _generateNormalPdf(
     Notebook notebook,
@@ -39,7 +49,7 @@ class PdfService {
     final pdf = pw.Document();
 
     pdf.addPage(_buildCoverPage(notebook, notes.length));
-			
+
     for (int i = 0; i < notes.length; i++) {
       final note = notes[i];
       final isLeftPage = i.isEven;
@@ -57,7 +67,7 @@ class PdfService {
           build: (context) {
             return _buildNotePage(
               note: note,
-              image: pdfImage,
+              imageData: pdfImage,
               pageNumber: context.pageNumber,
               totalPages: context.pagesCount,
               notebookTitle: notebook.title,
@@ -76,7 +86,7 @@ class PdfService {
   ) async {
     final pdf = pw.Document();
 
-    final totalLogicalPages = 2 + notes.length; // 1 couverture + 1 page blanche + notes
+    final totalLogicalPages = 2 + notes.length;
     final imposition = BookletImposition.build(totalLogicalPages);
 
     final pageBuilders = await _buildLogicalPages(notebook, notes);
@@ -126,14 +136,15 @@ class PdfService {
       pages.add(
         () => _buildBookletNotePageContent(
           note: note,
-          image: pdfImage,
+          imageData: pdfImage,
           notebookTitle: notebook.title,
           pageNumber: currentPageNumber,
-          totalPages: notes.length
+          totalPages: notes.length,
         ),
       );
-      actualPageNumber += 1;
+							
 
+      actualPageNumber += 1;
     }
 
     return pages;
@@ -274,17 +285,23 @@ class PdfService {
         ),
       ),
     );
-		
-	  
+  
+   
   }
 
   static pw.Widget _buildNotePage({
     required Note note,
-    required pw.MemoryImage? image,
+    required PdfPreparedImage? imageData,
     required int pageNumber,
     required int totalPages,
     required String notebookTitle,
   }) {
+    final hasEmptyCaption = note.caption.trim().isEmpty;
+    final shouldExpandImage =
+        imageData != null && imageData.wasPortrait && hasEmptyCaption;
+
+    final imageHeight = shouldExpandImage ? 420.0 : 280.0;
+
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -322,24 +339,25 @@ class PdfService {
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              if (image != null) ...[
-                _buildImageBox(image, height: 280),
-                pw.SizedBox(height: 20),
+              if (imageData != null) ...[
+                _buildImageBox(imageData.image, height: imageHeight),
+                if (!hasEmptyCaption) pw.SizedBox(height: 20),
               ],
-              pw.SizedBox(
-                width: double.infinity,
-                child: pw.Container(
-                  padding: const pw.EdgeInsets.all(14),
-                  child: pw.Text(
-                    note.caption.trim().isEmpty ? '' : note.caption,
-                    textAlign: pw.TextAlign.justify,
-                    style: const pw.TextStyle(
-                      fontSize: 12,
-                      lineSpacing: 4,
+              if (!hasEmptyCaption)
+                pw.SizedBox(
+                  width: double.infinity,
+                  child: pw.Container(
+                    padding: const pw.EdgeInsets.all(14),
+                    child: pw.Text(
+                      note.caption,
+                      textAlign: pw.TextAlign.justify,
+                      style: const pw.TextStyle(
+                        fontSize: 12,
+                        lineSpacing: 4,
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -351,11 +369,17 @@ class PdfService {
 
   static pw.Widget _buildBookletNotePageContent({
     required Note note,
-    required pw.MemoryImage? image,
+    required PdfPreparedImage? imageData,
     required String notebookTitle,
     required int pageNumber,
     required int totalPages,
   }) {
+    final hasEmptyCaption = note.caption.trim().isEmpty;
+    final shouldExpandImage =
+        imageData != null && imageData.wasPortrait && hasEmptyCaption;
+
+    final imageHeight = shouldExpandImage ? 240.0 : 170.0;
+
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -389,25 +413,26 @@ class PdfService {
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              if(image != null)...[
-                _buildImageBox(image, height: 170),
-                pw.SizedBox(height: 12),
+              if (imageData != null) ...[
+                _buildImageBox(imageData.image, height: imageHeight),
+                if (!hasEmptyCaption) pw.SizedBox(height: 12),
               ],
-              pw.Expanded(
-                child: pw.Container(
-                  width: double.infinity,
-                  padding: const pw.EdgeInsets.all(8),
-                  child: pw.Text(
-                    note.caption.trim().isEmpty ? '' : note.caption,
-                    textAlign: pw.TextAlign.justify,
-                    style: const pw.TextStyle(
-                      fontSize: 9,
-                      lineSpacing: 3,
+              if (!hasEmptyCaption)
+                pw.Expanded(
+                  child: pw.Container(
+                    width: double.infinity,
+                    padding: const pw.EdgeInsets.all(8),
+                    child: pw.Text(
+                      note.caption,
+                      textAlign: pw.TextAlign.justify,
+                      style: const pw.TextStyle(
+                        fontSize: 9,
+                        lineSpacing: 3,
+                      ),
+                      maxLines: 18,
                     ),
-                    maxLines: 18,
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -417,7 +442,10 @@ class PdfService {
     );
   }
 
-  static pw.Widget _buildImageBox(pw.MemoryImage? image, {required double height}) {
+  static pw.Widget _buildImageBox(
+    pw.MemoryImage? image, {
+    required double height,
+  }) {
     return pw.Container(
       width: double.infinity,
       height: height,
@@ -442,9 +470,9 @@ class PdfService {
               ),
             ),
 
-								
-											 
 		
+			
+  
     );
   }
 
@@ -502,7 +530,7 @@ class PdfService {
     return pw.MemoryImage(bytes);
   }
 
-  static Future<pw.MemoryImage?> _buildPdfImage(String? imagePath) async {
+  static Future<PdfPreparedImage?> _buildPdfImage(String? imagePath) async {
     if (imagePath == null || imagePath.isEmpty) return null;
 
     final file = File(imagePath);
@@ -512,18 +540,25 @@ class PdfService {
     final decoded = img.decodeImage(bytes);
 
     if (decoded == null) {
-      return pw.MemoryImage(bytes);
+      return PdfPreparedImage(
+        image: pw.MemoryImage(bytes),
+        wasPortrait: false,
+      );
     }
 
+    final wasPortrait = decoded.height > decoded.width;
     img.Image finalImage = decoded;
 
     // Si l’image est en portrait, on la tourne de -90°
-    if (decoded.height > decoded.width) {
+    if (wasPortrait) {
       finalImage = img.copyRotate(decoded, angle: -90);
     }
 
     final outputBytes = img.encodeJpg(finalImage, quality: 95);
-    return pw.MemoryImage(outputBytes);
+
+    return PdfPreparedImage(
+      image: pw.MemoryImage(outputBytes),
+      wasPortrait: wasPortrait,
+    );
   }
 }
-
