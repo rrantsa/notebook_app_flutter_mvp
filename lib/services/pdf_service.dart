@@ -338,6 +338,9 @@ class PdfService {
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
+              if (hasEmptyCaption)...[
+                pw.SizedBox(height: 80),
+              ],
               if (imageData != null) ...[
                 _buildImageBox(imageData.image, height: imageHeight),
                 if (!hasEmptyCaption) pw.SizedBox(height: 20),
@@ -415,7 +418,6 @@ class PdfService {
               if (hasEmptyCaption)...[
                 pw.SizedBox(height: 50),
               ],
-
               if (imageData != null) ...[
                 _buildImageBox(imageData.image, height: imageHeight),
                 if (!hasEmptyCaption) pw.SizedBox(height: 12),
