@@ -89,7 +89,7 @@ class PdfService {
   ) async {
     final pdf = pw.Document();
 
-    final totalLogicalPages = 2 + notes.length;
+    final totalLogicalPages = 3 + notes.length;
     final imposition = BookletImposition.build(totalLogicalPages);
 
     final pageBuilders = await _buildLogicalPages(notebook, notes);
@@ -151,6 +151,9 @@ class PdfService {
 
       actualPageNumber += 1;
     }
+
+    //dernière page toujours page blanche de couverture
+    pages.add(() => pw.SizedBox());
 
     return pages;
   }

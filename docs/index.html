@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NotebookApp — Turn your memories into a book</title>
+  <meta name="description" content="NotebookApp helps you turn your photos and memories into a printable book." />
+  <style>
+    :root {
+      --bg: #0d47a1;
+      --bg-dark: #08306e;
+      --bg-soft: #eaf2ff;
+      --text: #ffffff;
+      --text-dark: #10233f;
+      --muted: #c9d8f5;
+      --card: rgba(255, 255, 255, 0.1);
+      --border: rgba(255, 255, 255, 0.18);
+      --shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+      --radius: 24px;
+      --max: 1120px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text-dark);
+      background: #f7faff;
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, var(--bg-dark), var(--bg));
+      color: var(--text);
+    }
+
+    .hero::before,
+    .hero::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(8px);
+      opacity: 0.18;
+      pointer-events: none;
+    }
+
+    .hero::before {
+      width: 420px;
+      height: 420px;
+      background: #5ea1ff;
+      top: -140px;
+      right: -100px;
+    }
+
+    .hero::after {
+      width: 320px;
+      height: 320px;
+      background: #9bc2ff;
+      bottom: -120px;
+      left: -80px;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 22px 0;
+      position: relative;
+      z-index: 2;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.2);
+      display: grid;
+      place-items: center;
+      font-size: 1.2rem;
+      box-shadow: var(--shadow);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .nav-links a:hover {
+      color: #fff;
+    }
+
+    .hero-grid {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 40px;
+      align-items: center;
+      padding: 52px 0 84px;
+    }
+
+    h1 {
+      margin: 0 0 18px;
+      font-size: clamp(2.4rem, 6vw, 4.7rem);
+      line-height: 1.04;
+      letter-spacing: -1.6px;
+    }
+
+    .subtitle {
+      font-size: clamp(1.05rem, 2.2vw, 1.3rem);
+      color: var(--muted);
+      max-width: 650px;
+      margin: 0 0 28px;
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 26px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 22px;
+      border-radius: 999px;
+      font-weight: 700;
+      transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: #ffffff;
+      color: var(--bg-dark);
+      box-shadow: var(--shadow);
+    }
+
+    .btn-secondary {
+      border: 1px solid rgba(255,255,255,0.28);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+    }
+
+    .hero-notes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .hero-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.08));
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .app-preview {
+      background: #f8fbff;
+      color: var(--text-dark);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 24px 70px rgba(0,0,0,0.26);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .app-topbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 18px;
+      background: #eef4ff;
+      border-bottom: 1px solid #d8e6ff;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #c4d6fa;
+    }
+
+    .app-body {
+      padding: 20px;
+      background: linear-gradient(180deg, #ffffff, #f6f9ff);
+    }
+
+    .preview-book {
+      background: #0f4cb1;
+      border-radius: 24px;
+      padding: 18px;
+      min-height: 330px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    }
+
+    .preview-header,
+    .preview-footer {
+      display: flex;
+      justify-content: space-between;
+      color: rgba(255,255,255,0.88);
+      font-size: 0.9rem;
+    }
+
+    .preview-page {
+      margin: 18px auto;
+      width: min(100%, 270px);
+      aspect-ratio: 4 / 5.4;
+      background: #fff;
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 18px 30px rgba(0,0,0,0.16);
+      display: grid;
+      gap: 10px;
+    }
+
+    .preview-image {
+      border-radius: 12px;
+      background: linear-gradient(135deg, #b6d8ff, #2b72d9);
+      position: relative;
+      overflow: hidden;
+      min-height: 140px;
+    }
+
+    .preview-image::before {
+      content: "";
+      position: absolute;
+      width: 70px;
+      height: 70px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 50%;
+      right: 16px;
+      top: 16px;
+    }
+
+    .preview-image::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 55%;
+      background: linear-gradient(135deg, #0d47a1 20%, #3380eb 60%, #9bc2ff 100%);
+      clip-path: polygon(0 100%, 28% 44%, 48% 72%, 68% 32%, 100% 100%);
+    }
+
+    .line {
+      height: 10px;
+      border-radius: 999px;
+      background: #dce9ff;
+    }
+
+    .line.small { width: 58%; }
+    .line.medium { width: 76%; }
+    .line.full { width: 100%; }
+
+    section {
+      padding: 84px 0;
+    }
+
+    .section-head {
+      text-align: center;
+      max-width: 760px;
+      margin: 0 auto 46px;
+    }
+
+    .section-head h2 {
+      margin: 0 0 12px;
+      font-size: clamp(2rem, 4vw, 2.9rem);
+      line-height: 1.1;
+      color: #0f2342;
+    }
+
+    .section-head p {
+      margin: 0;
+      color: #55708f;
+      font-size: 1.05rem;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    .feature {
+      background: #fff;
+      border: 1px solid #e3edff;
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: 0 12px 30px rgba(16, 35, 63, 0.06);
+    }
+
+    .feature-icon {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      margin-bottom: 16px;
+      background: var(--bg-soft);
+      color: var(--bg);
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .feature h3 {
+      margin: 0 0 10px;
+      font-size: 1.2rem;
+      color: #10233f;
+    }
+
+    .feature p {
+      margin: 0;
+      color: #5c7592;
+    }
+
+    .how-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    .step {
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, #ffffff, #f5f9ff);
+      border: 1px solid #e3edff;
+      padding: 24px;
+    }
+
+    .step-number {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      color: #fff;
+      background: var(--bg);
+      margin-bottom: 16px;
+    }
+
+    .showcase {
+      background: linear-gradient(180deg, #eef5ff, #f8fbff);
+      border-top: 1px solid #dfebff;
+      border-bottom: 1px solid #dfebff;
+    }
+
+    .showcase-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .showcase-card {
+      background: #fff;
+      border: 1px solid #e3edff;
+      border-radius: 28px;
+      padding: 22px;
+      box-shadow: 0 18px 35px rgba(16, 35, 63, 0.08);
+    }
+
+    .mini-cover {
+      background: linear-gradient(135deg, #08306e, #0d47a1);
+      border-radius: 22px;
+      padding: 24px;
+      color: #fff;
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+      justify-content: end;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mini-cover::before {
+      content: "";
+      position: absolute;
+      inset: auto -50px -50px auto;
+      width: 200px;
+      height: 200px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 50%;
+    }
+
+    .mini-cover small {
+      color: #b9cef4;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .mini-cover h3 {
+      margin: 8px 0 0;
+      font-size: 2rem;
+      line-height: 1.1;
+      max-width: 260px;
+    }
+
+    .list {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .list-item {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: #f6f9ff;
+      color: #36506e;
+      border: 1px solid #e2ecff;
+    }
+
+    .cta-section {
+      padding: 84px 0 100px;
+    }
+
+    .cta-box {
+      background: linear-gradient(135deg, #0b3f94, #1260d6);
+      color: #fff;
+      border-radius: 32px;
+      padding: 42px;
+      text-align: center;
+      box-shadow: 0 24px 60px rgba(11, 63, 148, 0.24);
+    }
+
+    .cta-box h2 {
+      margin: 0 0 12px;
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 1.08;
+    }
+
+    .cta-box p {
+      margin: 0 auto 24px;
+      max-width: 720px;
+      color: #dbe7ff;
+      font-size: 1.08rem;
+    }
+
+    footer {
+      padding: 28px 0 48px;
+      color: #6b839f;
+      text-align: center;
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 960px) {
+      .hero-grid,
+      .showcase-grid,
+      .features-grid,
+      .how-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .nav-links {
+        flex-wrap: wrap;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        width: min(var(--max), calc(100% - 22px));
+      }
+
+      .hero-grid {
+        padding: 28px 0 60px;
+      }
+
+      section,
+      .cta-section {
+        padding: 62px 0;
+      }
+
+      .hero-card,
+      .feature,
+      .step,
+      .showcase-card,
+      .cta-box {
+        border-radius: 22px;
+      }
+
+      .cta-box {
+        padding: 28px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="container">
+      <nav class="nav">
+        <a class="brand" href="#top">
+          <span class="brand-mark">📘</span>
+          <span>NotebookApp</span>
+        </a>
+
+        <div class="nav-links">
+          <a href="#features">Features</a>
+          <a href="#how-it-works">How it works</a>
+          <a href="#download">Download</a>
+        </div>
+      </nav>
+
+      <div class="hero-grid" id="top">
+        <div>
+          <h1>Turn your memories into a book.</h1>
+          <p class="subtitle">
+            NotebookApp helps you organize notes, add photos, and export everything as a beautiful printable book.
+          </p>
+
+          <div class="cta-row">
+            <a class="btn btn-primary" href="https://github.com/rrantsa/notebook_app_flutter_mvp/releases/latest">Download latest release</a>
+            <a class="btn btn-secondary" href="#features">See features</a>
+          </div>
+
+          <div class="hero-notes">
+            <span>Desktop app</span>
+            <span>Printable PDF export</span>
+            <span>Simple and local-first workflow</span>
+          </div>
+        </div>
+
+        <div class="hero-card">
+          <div class="app-preview">
+            <div class="app-topbar">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </div>
+            <div class="app-body">
+              <div class="preview-book">
+                <div class="preview-header">
+                  <span>NotebookApp</span>
+                  <span>Printable preview</span>
+                </div>
+                <div class="preview-page">
+                  <div class="preview-image"></div>
+                  <div class="line full"></div>
+                  <div class="line medium"></div>
+                  <div class="line small"></div>
+                </div>
+                <div class="preview-footer">
+                  <span>Photos + notes</span>
+                  <span>PDF export</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="features">
+      <div class="container">
+        <div class="section-head">
+          <h2>A simple app to preserve your moments</h2>
+          <p>
+            Build a notebook page by page, combine photos and text, and prepare your memories for printing.
+          </p>
+        </div>
+
+        <div class="features-grid">
+          <article class="feature">
+            <div class="feature-icon">✍</div>
+            <h3>Create structured notebooks</h3>
+            <p>Create notebooks with titles, years, and organized notes to keep your memories clear and easy to browse.</p>
+          </article>
+
+          <article class="feature">
+            <div class="feature-icon">🖼</div>
+            <h3>Add photos to your stories</h3>
+            <p>Attach images to each note so every page feels like a real photobook, not just a simple text export.</p>
+          </article>
+
+          <article class="feature">
+            <div class="feature-icon">📄</div>
+            <h3>Export as printable PDF</h3>
+            <p>Generate clean PDF pages designed for printing so your notebook can become a real physical book.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="showcase">
+      <div class="container">
+        <div class="showcase-grid">
+          <div class="showcase-card">
+            <div class="mini-cover">
+              <small>Made for memories</small>
+              <h3>From notes on screen to pages in hand</h3>
+            </div>
+          </div>
+
+          <div>
+            <div class="section-head" style="text-align:left; margin:0 0 18px;">
+              <h2>Designed for a focused workflow</h2>
+              <p>
+                NotebookApp keeps the experience simple: write, add your image, export, and print.
+              </p>
+            </div>
+
+            <div class="list">
+              <div class="list-item">Clean notebook organization for personal memories, trips, family albums, and projects.</div>
+              <div class="list-item">Minimal interface that stays focused on content instead of distractions.</div>
+              <div class="list-item">Ideal for users who want a lightweight desktop tool for printable keepsakes.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how-it-works">
+      <div class="container">
+        <div class="section-head">
+          <h2>How it works</h2>
+          <p>Create your notebook in three simple steps.</p>
+        </div>
+
+        <div class="how-grid">
+          <article class="step">
+            <div class="step-number">1</div>
+            <h3>Create your notebook</h3>
+            <p>Start with a title, subtitle, or year, then prepare the structure of your book.</p>
+          </article>
+
+          <article class="step">
+            <div class="step-number">2</div>
+            <h3>Add notes and images</h3>
+            <p>Write your memories, attach your photos, and build each page the way you want.</p>
+          </article>
+
+          <article class="step">
+            <div class="step-number">3</div>
+            <h3>Export and print</h3>
+            <p>Generate a printable PDF and turn your digital notebook into something physical.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-section" id="download">
+      <div class="container">
+        <div class="cta-box">
+          <h2>Start building your printable notebook today</h2>
+          <p>
+            NotebookApp is made for people who want to transform photos and memories into a real book they can keep, print, and share.
+          </p>
+          <div class="cta-row" style="justify-content:center; margin-bottom:0;">
+            <a class="btn btn-primary" href="https://github.com/rrantsa/notebook_app_flutter_mvp/releases/latest">Download latest release</a>
+            <a class="btn btn-secondary" href="https://github.com/rrantsa/notebook_app_flutter_mvp">View on GitHub</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      © 2026 NotebookApp — Turn your memories into a book.
+    </div>
+  </footer>
+</body>
+</html>
