@@ -14,6 +14,7 @@ class NotebooksListScreen extends StatefulWidget {
 
 class _NotebooksListScreenState extends State<NotebooksListScreen> {
   List<Notebook> _notebooks = [];
+  Map<int, int> _noteCounts = {};
   bool _isLoading = true;
 
   @override
@@ -29,24 +30,35 @@ class _NotebooksListScreenState extends State<NotebooksListScreen> {
 
     final notebooks = await DatabaseHelper.instance.getNotebooks();
 
+    final Map<int, int> noteCounts = {};
+    for (final notebook in notebooks) {
+      if (notebook.id != null) {
+        final count = await DatabaseHelper.instance.getNotesCountByNotebookId(
+          notebook.id!,
+        );
+        noteCounts[notebook.id!] = count;
+      }
+    }
+
     setState(() {
       _notebooks = notebooks;
+      _noteCounts = noteCounts;
       _isLoading = false;
     });
   }
 
-Future<void> _goToCreateNotebookScreen() async {
-  final created = await Navigator.push<bool>(
-    context,
-    MaterialPageRoute(
-      builder: (context) => const CreateNotebookScreen(),
-    ),
-  );
+  Future<void> _goToCreateNotebookScreen() async {
+    final created = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CreateNotebookScreen(),
+      ),
+    );
 
-  if (created == true) {
-    await _loadNotebooks();
+    if (created == true) {
+      await _loadNotebooks();
+    }
   }
-}
 
   Future<void> _deleteNotebook(int id) async {
     await DatabaseHelper.instance.deleteNotebook(id);
@@ -59,7 +71,7 @@ Future<void> _goToCreateNotebookScreen() async {
       MaterialPageRoute(
         builder: (context) => NotebookDetailScreen(notebook: notebook),
       ),
-    );
+    ).then((_) => _loadNotebooks());
   }
 
   @override
@@ -83,6 +95,9 @@ Future<void> _goToCreateNotebookScreen() async {
                     itemCount: _notebooks.length,
                     itemBuilder: (context, index) {
                       final notebook = _notebooks[index];
+                      final noteCount = notebook.id != null
+                          ? (_noteCounts[notebook.id!] ?? 0)
+                          : 0;
 
                       return Card(
                         margin: const EdgeInsets.symmetric(
@@ -92,7 +107,7 @@ Future<void> _goToCreateNotebookScreen() async {
                         child: ListTile(
                           title: Text(notebook.title),
                           subtitle: Text(
-                            '${notebook.subtitle} • ${notebook.year}',
+                            '${notebook.subtitle} • $noteCount note${noteCount > 1 ? 's' : ''} • ${notebook.year}',
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -141,11 +156,13 @@ Future<void> _goToCreateNotebookScreen() async {
                                     await _deleteNotebook(notebook.id!);
                                   }
                                 },
-                              )
-                            ]
+							   
+							 
+                              ),
+                            ],
                           ),
                           onTap: () => _openNotebook(notebook),
-                          ),
+                        ),
                       );
                     },
                   ),

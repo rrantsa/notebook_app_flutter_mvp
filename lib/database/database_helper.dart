@@ -121,6 +121,14 @@ class DatabaseHelper {
       whereArgs: [notebook.id],
     );
   }
+  Future<int> getNotesCountByNotebookId(int notebookId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM notes WHERE notebookId = ?',
+      [notebookId],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
   Future close() async {
     final db = await instance.database;
     db.close();
