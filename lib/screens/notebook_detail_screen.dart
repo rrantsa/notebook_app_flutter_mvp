@@ -21,7 +21,22 @@ class NotebookDetailScreen extends StatefulWidget {
 
 class _NotebookDetailScreenState extends State<NotebookDetailScreen> {
   List<Note> notes = [];
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
+
+  List<Note> get _filteredNotes {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) {
+      return notes;
+    }
+
+    return notes.where((note) {
+      final title = note.title.toLowerCase();
+      final caption = note.caption.toLowerCase();
+      return title.contains(query) || caption.contains(query);
+    }).toList();
+  }
 
   @override
   void initState() {
@@ -42,6 +57,12 @@ class _NotebookDetailScreenState extends State<NotebookDetailScreen> {
       notes = loadedNotes;
       _isLoading = false;
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> addNote(Note note) async {
@@ -128,6 +149,8 @@ class _NotebookDetailScreenState extends State<NotebookDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final filteredNotes = _filteredNotes;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.notebook.title),
@@ -140,98 +163,149 @@ class _NotebookDetailScreenState extends State<NotebookDetailScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : notes.isEmpty
-              ? const Center(
-                  child: Text('No notes yet. Tap + to create one.'),
-                )
-              : ListView.builder(
-                  itemCount: notes.length,
-                  itemBuilder: (context, index) {
-                    final note = notes[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(12),
-                        leading: note.imagePath != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.file(
-                                  File(note.imagePath!),
-                                  width: 60,
-                                  height: 60,
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                            : const Icon(Icons.image_not_supported),
-                        title: Text(note.title),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(note.date),
-                            const SizedBox(height: 4),
-                            Text(
-                              note.caption,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit),
-                              onPressed: () => editNote(note),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () async {
-                                if (note.id == null) return;
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Search by title or description',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {
+                                  _searchQuery = '';
+                                });
+                              },
+                              icon: const Icon(Icons.clear),
+                            )
+                          : null,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: notes.isEmpty
+                      ? const Center(
+                          child: Text('No notes yet. Tap + to create one.'),
+                        )
+                      : filteredNotes.isEmpty
+                          ? const Center(
+                              child: Text('No matching notes found.'),
+                            )
+                          : ListView.builder(
+                              itemCount: filteredNotes.length,
+                              itemBuilder: (context, index) {
+                                final note = filteredNotes[index];
+                                return Card(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.all(12),
+                                    leading: note.imagePath != null
+                                        ? ClipRRect(
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: Image.file(
+                                              File(note.imagePath!),
+                                              width: 60,
+                                              height: 60,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          )
+                                        : const Icon(Icons.image_not_supported),
+                                    title: Text(note.title),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(note.date),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          note.caption,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit),
+                                          onPressed: () => editNote(note),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.delete,
+                                            color: Colors.red,
+                                          ),
+                                          onPressed: () async {
+                                            if (note.id == null) return;
 
-                                final confirm = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Delete note'),
-                                    content: const Text('Are you sure you want to delete this note?'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context, false),
-                                        child: const Text('Cancel'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context, true),
-                                        child: const Text('Delete'),
-                                      ),
-                                    ],
+                                            final confirm = await showDialog<bool>(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                title: const Text('Delete note'),
+                                                content: const Text(
+                                                  'Are you sure you want to delete this note?',
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(
+                                                      context,
+                                                      false,
+                                                    ),
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(
+                                                      context,
+                                                      true,
+                                                    ),
+                                                    child: const Text('Delete'),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+
+                                            if (confirm == true) {
+                                              await DatabaseHelper.instance
+                                                  .deleteNote(note.id!);
+                                              await _loadNotes();
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => NoteReaderScreen(
+                                            notebook: widget.notebook,
+                                            notes: filteredNotes,
+                                            initialIndex: index,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   ),
                                 );
-
-                                if (confirm == true) {
-                                  await DatabaseHelper.instance.deleteNote(note.id!);
-                                  await _loadNotes();
-                                }
                               },
                             ),
-                          ],
-                        ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => NoteReaderScreen(
-                                notebook: widget.notebook,
-                                notes: notes,
-                                initialIndex: index,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    );
-
-                  },
                 ),
+              ],
+            ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.note_add),
         onPressed: () async {
